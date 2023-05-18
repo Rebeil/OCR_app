@@ -1,10 +1,10 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import ImageGrab
-from PyQt5.QtCore import pyqtSignal, QRectF
-from PyQt5.QtGui import QPixmap, QPainterPath
+from PyQt5.QtCore import pyqtSignal, QRectF, QRegExp, QObject
+from PyQt5.QtGui import QPixmap, QPainterPath, QRegExpValidator
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QFileDialog, QSizePolicy, QTextEdit, QPushButton, \
-    QHBoxLayout, QGridLayout, QVBoxLayout
+    QHBoxLayout, QGridLayout, QVBoxLayout, QPlainTextEdit, QLineEdit, QLCDNumber, QSlider
 from pathlib import Path
 
 
@@ -77,22 +77,23 @@ class MyView(QGraphicsView):
     def __init__(self, *args):
         QGraphicsView.__init__(self, *args)
         self.angle_of_rotate_image = 0
+        self.angle = 5
 
     def slot_rotate_left(self):
         """
         поворот против часовой стрелки на 5 градусов
         :return:
         """
-        self.rotate(-5)
-        self.angle_of_rotate_image += 5
+        self.rotate(-self.angle)
+        self.angle_of_rotate_image += self.angle
 
     def slot_rotate_right(self):
         """
         поворот по часовой стрелки на 5 градусов
         :return:
         """
-        self.rotate(5)
-        self.angle_of_rotate_image -= 5
+        self.rotate(self.angle)
+        self.angle_of_rotate_image -= self.angle
 
     def reset_angle(self):
         """
@@ -103,9 +104,18 @@ class MyView(QGraphicsView):
         self.angle_of_rotate_image = 0
 
 
+class Communicate(QObject):
+    end_enter = pyqtSignal()
+
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+
+        # region политика размера для кнопок(sizePolicy)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        # endregion
+
         self.pixmap = None
 
         # region главный виджет(centralWidget)
@@ -114,15 +124,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.centralWidget)
         # endregion
 
-        # region политика размера для кнопок(sizePolicy)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        # endregion
-
         # region виджет изображения(scene)
         self.scene = QGraphicsScene()
         self.view = MyView(self.scene)
         self.view.setMinimumSize(300, 400)  # установка минимального размера
         # endregion
+
+
+        # region слайдер QSlider(sld)
+        # self.lcd = QLCDNumber(self)
+        # self.lcd.setSegmentStyle(QLCDNumber.Flat)
+
+        self.sld = QSlider(QtCore.Qt.Horizontal, self)
+        self.sld.setValue(self.view.angle)
+        self.sld.setSizePolicy(sizePolicy)
+        self.sld.setMinimumHeight(25)
+        self.sld.setMaximumHeight(40)
+        self.sld.setMaximum(360)
+
+        # self.sld.valueChanged.connect(self.lcd.display)
+        self.sld.valueChanged.connect(self.line_text_edit)
+
+        self.sld.setSizePolicy(sizePolicy)
+        # endregion
+
+        # self.c = Communicate()
+        # self.c.end_enter.connect(self.textChanged)
 
         # region правый верхний виджет(text_view)
         self.text_view = QTextEdit()
@@ -194,8 +221,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_reset_angle = QPushButton()
         self.btn_reset_angle.setText('Сбросить\nповорот')
         self.btn_reset_angle.setStyleSheet("background-color: rgb(128, 128, 137);")
-        self.btn_reset_angle.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold)) # Roboto
-        #self.btn_select_area.adjustSize()
+        self.btn_reset_angle.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold))  # Roboto
+        # self.btn_select_area.adjustSize()
         self.btn_reset_angle.setSizePolicy(sizePolicy)
         self.btn_reset_angle.setMinimumHeight(40)
         self.btn_reset_angle.setMaximumHeight(50)
@@ -227,6 +254,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.buttonRight.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Equal)
         self.buttonRight.clicked.connect(self.view.slot_rotate_right)
         # endregion
+
+        # region кнопка изменения гралуса поворота изажения(plain_text)
+        self.plain_text = QLineEdit()
+        self.plain_text.setMaxLength(3)
+        reg_ex = QRegExp("[0-9]{1,3}")
+        input_validator = QRegExpValidator(reg_ex, self.plain_text)
+        self.plain_text.setValidator(input_validator)
+        self.plain_text.setText(str(self.view.angle))
+        self.plain_text.setStyleSheet("background-color: rgb(12, 40, 190);border-radius: 0;border: 0px solid")
+        self.plain_text.setFont(QtGui.QFont("Times", 20, QtGui.QFont.Bold))
+        self.plain_text.setSizePolicy(sizePolicy)
+        self.plain_text.setMinimumHeight(40)
+        self.plain_text.setMinimumWidth(40)
+        # self.plain_text.setMaximumHeight(40)
+        self.plain_text.setMaximumWidth(25)
+        self.plain_text.textChanged.connect(self.text_changed)
+        # endregion
+
         # endregion
 
         # region ##layouts
@@ -235,28 +280,52 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.layout_flip_the_image.setStyleSheet("background-color: rgb(248, 228, 255);")
         # endregion
 
-        # region левый нижний лэйаут(layout_lower_left)
+        # region левый нижний лэйаут(layout_lower_left[vertical])
         self.layout_lower_left = QVBoxLayout()
-
+        """
+              layout_lower_left(vertical)
+                |------------------|
+                |open_btn          |
+                |btn_recognize_text|
+                |btn_select_area   |
+                |------------------|
+        """
         self.layout_lower_left.addWidget(self.open_btn, 5)
         self.layout_lower_left.addWidget(self.btn_recognize_text, 5)
         self.layout_lower_left.addWidget(self.btn_select_area, 5)
         # endregion
 
-        # region правый нижний лэйаут(layout_lower_right)
+        # region правый нижний лэйаут(layout_lower_right[vertical])
         self.layout_lower_right = QVBoxLayout()
-
+        """
+                  layout_lower_right(vertical)
+                    |---------------------|
+                    |btn_clean_output     |
+                    |btn_upload_text      |
+                    |layout_flip_the_image|
+                    |---------------------|
+        """
         self.layout_lower_right.addWidget(self.btn_clean_output, 50)
         self.layout_lower_right.addWidget(self.btn_upload_text, 50)
+        self.layout_lower_right.addWidget(self.sld)
         self.layout_lower_right.addLayout(self.layout_flip_the_image)
         # endregion
 
         # region верхний левый лэйаут(layout_up_left)
         self.layout_up_left = QHBoxLayout()
         # endregion
+        ####self.view.angle = int(self.plain_text.text())
 
-        # region добавление на лэйаут(layout_flip_the_image) кнопок для манипуляции с изображением
+        # region добавление на лэйаут(layout_flip_the_image[horizontal]) кнопок для манипуляции с изображением
+        """
+                    layout_flip_the_image(horizontal)
+            |-------------------------------------------------|
+            |buttonLeft|plain_text|buttonRight|btn_reset_angle|
+            |-------------------------------------------------|
+        """
         self.layout_flip_the_image.addWidget(self.buttonLeft)
+        self.layout_flip_the_image.addWidget(self.plain_text)
+        # self.layout_flip_the_image.addWidget(self.lcd)
         self.layout_flip_the_image.addWidget(self.buttonRight)
         self.layout_flip_the_image.addWidget(self.btn_reset_angle)
         # endregion
@@ -280,7 +349,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 |--------------------------------------|
                 | layout_lower_left |layout_lower_right|
                 |--------------------------------------|
-                """
+        """
         self.grid.addLayout(self.layout_up_left, 0, 0)
         self.grid.addWidget(self.text_view, 0, 1)
         self.grid.addLayout(self.layout_lower_left, 1, 0)
@@ -367,6 +436,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         pass
 
+    def line_text_edit(self):
+        self.plain_text.setText(str(self.sld.value()))
+
     def keyPressEvent(self, e):
         """
         Выход по нажатию shift+Q
@@ -376,7 +448,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if int(e.modifiers()) == QtCore.Qt.ControlModifier:
             if e.key() == QtCore.Qt.Key_Q:
                 self.close()
-                #sys.exit(app.exec_())
+                # sys.exit(app.exec_())
+
+    def text_changed(self):
+        if self.plain_text.text() != '':
+            self.view.angle = int(self.plain_text.text())
+            self.sld.setSliderPosition(int(self.plain_text.text()))
+            # self.c.end_enter.emit()
+
     # endregion
 
 
@@ -399,7 +478,7 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     w = MainWindow()
     w.setWindowTitle("OCR")
-    #w.setWindowIcon()
+    # w.setWindowIcon() # Задел на будущее
     w.resize(600, 400)
     w.show()
     sys.exit(app.exec_())
