@@ -3,8 +3,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import ImageGrab
 from PyQt5.QtCore import pyqtSignal, QRectF, QRegExp, QObject
 from PyQt5.QtGui import QPixmap, QPainterPath, QRegExpValidator
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QFileDialog, QSizePolicy, QTextEdit, QPushButton, \
-    QHBoxLayout, QGridLayout, QVBoxLayout, QPlainTextEdit, QLineEdit, QLCDNumber, QSlider
+from PyQt5.QtWidgets import (QGraphicsScene, QGraphicsView, QFileDialog, QSizePolicy, QTextEdit, QPushButton,
+                             QHBoxLayout, QGridLayout, QVBoxLayout, QPlainTextEdit, QLineEdit, QLCDNumber, QSlider)
 from pathlib import Path
 
 
@@ -112,8 +112,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # region private varable
+        tmp = 240 # максимальный размер нижних лэйаутов
+        self.__max_height_size_of_widget_left_down_layout = tmp // 3
+        self.__max_height_size_of_widget_right_down_layout = tmp // 4
+        # endregion
+
         # region политика размера для кнопок(sizePolicy)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        size_policy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         # endregion
 
         self.pixmap = None
@@ -130,22 +136,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.view.setMinimumSize(300, 400)  # установка минимального размера
         # endregion
 
-
         # region слайдер QSlider(sld)
         # self.lcd = QLCDNumber(self)
         # self.lcd.setSegmentStyle(QLCDNumber.Flat)
 
         self.sld = QSlider(QtCore.Qt.Horizontal, self)
         self.sld.setValue(self.view.angle)
-        self.sld.setSizePolicy(sizePolicy)
+        self.sld.setSizePolicy(size_policy)
         self.sld.setMinimumHeight(25)
-        self.sld.setMaximumHeight(40)
+        self.sld.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
         self.sld.setMaximum(360)
 
         # self.sld.valueChanged.connect(self.lcd.display)
         self.sld.valueChanged.connect(self.line_text_edit)
 
-        self.sld.setSizePolicy(sizePolicy)
+        self.sld.setSizePolicy(size_policy)
         # endregion
 
         # self.c = Communicate()
@@ -162,9 +167,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_select_area = QtWidgets.QPushButton('Выделить область')
         self.btn_select_area.setStyleSheet("background-color: rgb(255, 47, 253);")
         self.btn_select_area.setFont(QtGui.QFont("Times", 18, QtGui.QFont.Bold))
-        self.btn_select_area.setSizePolicy(sizePolicy)
+        self.btn_select_area.setSizePolicy(size_policy)
         self.btn_select_area.setMinimumHeight(40)
-        self.btn_select_area.setMaximumHeight(50)
+        self.btn_select_area.setMaximumHeight(self.__max_height_size_of_widget_left_down_layout)
         self.btn_select_area.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Q)
         self.btn_select_area.clicked.connect(self.activateSnipping)
         # endregion
@@ -174,11 +179,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.open_btn.setText('Загрузить изображение')
         self.open_btn.setStyleSheet("background-color: rgb(237, 51, 59);")
         self.open_btn.setFont(QtGui.QFont("Times", 18, QtGui.QFont.Bold))
-        self.open_btn.setSizePolicy(sizePolicy)  # установка политики размера
+        self.open_btn.setSizePolicy(size_policy)  # установка политики размера
         self.open_btn.setMinimumHeight(40)
-        self.open_btn.setMaximumHeight(50)  # установка максимального размера кнопки
+        self.open_btn.setMaximumHeight(
+            self.__max_height_size_of_widget_left_down_layout)  # установка максимального размера кнопки
         self.open_btn.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_I)
         self.open_btn.clicked.connect(self.show_image)
+        # endregion
+
+        # region Распознать(btn_recognize_text)
+        self.btn_recognize_text = QPushButton()
+        self.btn_recognize_text.setText('Распознать')
+        self.btn_recognize_text.setStyleSheet("background-color: rgb(255, 228, 92);")
+        self.btn_recognize_text.setFont(QtGui.QFont("Times", 18, QtGui.QFont.Bold))
+        self.btn_recognize_text.setSizePolicy(size_policy)
+        self.btn_recognize_text.setMinimumHeight(40)
+        self.btn_recognize_text.setMaximumHeight(self.__max_height_size_of_widget_left_down_layout)
+        self.btn_recognize_text.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_A)
+        self.btn_recognize_text.clicked.connect(self.recognize_text)
         # endregion
 
         # region Выгрузить текст(btn_upload_text)
@@ -186,9 +204,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_upload_text.setText('Выгрузить текст')
         self.btn_upload_text.setStyleSheet("background-color: rgb(145, 65, 172);")
         self.btn_upload_text.setFont(QtGui.QFont("Times", 18, QtGui.QFont.Bold))
-        self.btn_upload_text.setSizePolicy(sizePolicy)  # установка политики размера
+        self.btn_upload_text.setSizePolicy(size_policy)  # установка политики размера
         self.btn_upload_text.setMinimumHeight(40)
-        self.btn_upload_text.setMaximumHeight(50)  # установка максимального размера кнопки
+        self.btn_upload_text.setMaximumHeight(
+            self.__max_height_size_of_widget_right_down_layout)  # установка максимального размера кнопки
         self.btn_upload_text.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_T)
         self.btn_upload_text.clicked.connect(self.upload_text)
         # endregion
@@ -198,23 +217,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_clean_output.setText('Очистить вывод')
         self.btn_clean_output.setStyleSheet("background-color: rgb(87, 227, 137);")
         self.btn_clean_output.setFont(QtGui.QFont("Times", 18, QtGui.QFont.Bold))
-        self.btn_clean_output.setSizePolicy(sizePolicy)  # установка политики размера
+        self.btn_clean_output.setSizePolicy(size_policy)  # установка политики размера
         self.btn_clean_output.setMinimumHeight(40)
-        self.btn_clean_output.setMaximumHeight(50)  # установка максимального размера кнопки
+        self.btn_clean_output.setMaximumHeight(
+            self.__max_height_size_of_widget_right_down_layout)  # установка максимального размера кнопки
         self.btn_clean_output.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_C)
         self.btn_clean_output.clicked.connect(self.clean_output)
-        # endregion
-
-        # region Распознать(btn_recognize_text)
-        self.btn_recognize_text = QPushButton()
-        self.btn_recognize_text.setText('Распознать')
-        self.btn_recognize_text.setStyleSheet("background-color: rgb(255, 228, 92);")
-        self.btn_recognize_text.setFont(QtGui.QFont("Times", 18, QtGui.QFont.Bold))
-        self.btn_recognize_text.setSizePolicy(sizePolicy)
-        self.btn_recognize_text.setMinimumHeight(40)
-        self.btn_recognize_text.setMaximumHeight(50)
-        self.btn_recognize_text.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_A)
-        self.btn_recognize_text.clicked.connect(self.recognize_text)
         # endregion
 
         # region Сбросить поворот(btn_reset_angle)
@@ -223,9 +231,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_reset_angle.setStyleSheet("background-color: rgb(128, 128, 137);")
         self.btn_reset_angle.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold))  # Roboto
         # self.btn_select_area.adjustSize()
-        self.btn_reset_angle.setSizePolicy(sizePolicy)
+        self.btn_reset_angle.setSizePolicy(size_policy)
         self.btn_reset_angle.setMinimumHeight(40)
-        self.btn_reset_angle.setMaximumHeight(50)
+        self.btn_reset_angle.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
         self.btn_reset_angle.setEnabled(True)
         self.btn_reset_angle.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_0)
         self.btn_reset_angle.clicked.connect(self.view.reset_angle)
@@ -235,9 +243,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.buttonLeft = QPushButton("Поворот\nналево")
         self.buttonLeft.setStyleSheet("background-color: rgb(12, 40, 90);")
         self.buttonLeft.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold))
-        self.buttonLeft.setSizePolicy(sizePolicy)
+        self.buttonLeft.setSizePolicy(size_policy)
         self.buttonLeft.setMinimumHeight(40)
-        self.buttonLeft.setMaximumHeight(50)
+        self.buttonLeft.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
         self.buttonLeft.setEnabled(False)
         self.buttonLeft.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Minus)
         self.buttonLeft.clicked.connect(self.view.slot_rotate_left)
@@ -247,9 +255,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.buttonRight = QPushButton("Поворот\nнаправо")
         self.buttonRight.setStyleSheet("background-color: rgb(12, 40, 90);border-radius: 0;border: 0px solid")
         self.buttonRight.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold))
-        self.buttonRight.setSizePolicy(sizePolicy)
+        self.buttonRight.setSizePolicy(size_policy)
         self.buttonRight.setMinimumHeight(40)
-        self.buttonRight.setMaximumHeight(50)
+        self.buttonRight.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
         self.buttonRight.setEnabled(False)
         self.buttonRight.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Equal)
         self.buttonRight.clicked.connect(self.view.slot_rotate_right)
@@ -264,11 +272,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plain_text.setText(str(self.view.angle))
         self.plain_text.setStyleSheet("background-color: rgb(12, 40, 190);border-radius: 0;border: 0px solid")
         self.plain_text.setFont(QtGui.QFont("Times", 20, QtGui.QFont.Bold))
-        self.plain_text.setSizePolicy(sizePolicy)
+        self.plain_text.setSizePolicy(size_policy)
         self.plain_text.setMinimumHeight(40)
         self.plain_text.setMinimumWidth(40)
         # self.plain_text.setMaximumHeight(40)
-        self.plain_text.setMaximumWidth(25)
+        self.plain_text.setMaximumWidth(self.__max_height_size_of_widget_right_down_layout)
         self.plain_text.textChanged.connect(self.text_changed)
         # endregion
 
@@ -376,11 +384,13 @@ class MainWindow(QtWidgets.QMainWindow):
         :return:
         """
 
-        filename, _ = QFileDialog.getOpenFileName(self,
+        # self.centralWidget.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        filename, t = QFileDialog.getOpenFileName(self,
                                                   "Open Image", ".",
                                                   "Image Files (*.png *.jpg *.tif);;JPG file (*.jpg);; PNG file ("
-                                                  "*.png);; Tif file (*.tif)")
-
+                                                  "*.png);; Tif file (*.tif);; Tiff file (*.tiff)")
+        print(type(t), t)
         # QFileDialog.show() передать фокус
         if filename:
             self.pixmap = QPixmap(filename)
@@ -390,8 +400,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 self.scene.addPixmap(self.pixmap)
 
-                self.buttonLeft.setStyleSheet("background-color: rgb(12, 40, 90);color:white")
-                self.buttonRight.setStyleSheet("background-color: rgb(12, 40, 90);color:white")
+                self.buttonLeft.setStyleSheet("background-color: rgb(12, 40, 90);"
+                                              "color:white")
+                self.buttonRight.setStyleSheet("background-color: rgb(12, 40, 90);"
+                                               "color:white")
 
                 self.buttonLeft.setEnabled(True)
                 self.buttonRight.setEnabled(True)
@@ -437,6 +449,10 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
 
     def line_text_edit(self):
+        """
+        устанавливает значение в поле(plain_text) из значения слайдера
+        :return:
+        """
         self.plain_text.setText(str(self.sld.value()))
 
     def keyPressEvent(self, e):
@@ -451,6 +467,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 # sys.exit(app.exec_())
 
     def text_changed(self):
+        """
+        Функция задаёт угол поворота(для view) и устаналивает на слайдере значение
+        :return:
+        """
         if self.plain_text.text() != '':
             self.view.angle = int(self.plain_text.text())
             self.sld.setSliderPosition(int(self.plain_text.text()))
