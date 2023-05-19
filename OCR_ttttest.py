@@ -128,7 +128,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         # region private varable
-        tmp = 240 # максимальный размер нижних лэйаутов
+        tmp = 180  # максимальный размер нижних лэйаутов
         self.__max_height_size_of_widget_left_down_layout = tmp // 3
         self.__max_height_size_of_widget_right_down_layout = tmp // 4
         # endregion
@@ -161,6 +161,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sld.setMinimumHeight(25)
         self.sld.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
         self.sld.setMaximum(360)
+        self.sld.setEnabled(False)
 
         # self.sld.valueChanged.connect(self.lcd.display)
         self.sld.valueChanged.connect(self.line_text_edit)
@@ -213,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_recognize_text.setMaximumHeight(self.__max_height_size_of_widget_left_down_layout)
         self.btn_recognize_text.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_A)
         self.btn_recognize_text.clicked.connect(self.recognize_text)
+        self.btn_recognize_text.setEnabled(False)
         # endregion
 
         # region Выгрузить текст(btn_upload_text)
@@ -250,36 +252,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_reset_angle.setSizePolicy(size_policy)
         self.btn_reset_angle.setMinimumHeight(40)
         self.btn_reset_angle.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
-        self.btn_reset_angle.setEnabled(True)
         self.btn_reset_angle.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_0)
         self.btn_reset_angle.clicked.connect(self.view.reset_angle)
+        self.btn_reset_angle.setEnabled(True)
         # endregion
 
         # region кнопка поворота налево(buttonLeft)
-        self.buttonLeft = QPushButton("Поворот\nналево")
+        self.buttonLeft = QPushButton("Поворот\nналево на")
         self.buttonLeft.setStyleSheet("background-color: rgb(12, 40, 90);")
         self.buttonLeft.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold))
         self.buttonLeft.setSizePolicy(size_policy)
         self.buttonLeft.setMinimumHeight(40)
         self.buttonLeft.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
-        self.buttonLeft.setEnabled(False)
         self.buttonLeft.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Minus)
         self.buttonLeft.clicked.connect(self.view.slot_rotate_left)
+        self.buttonLeft.setEnabled(False)
         # endregion
 
         # region кнопка поворота направо(buttonRight)
-        self.buttonRight = QPushButton("Поворот\nнаправо")
+        self.buttonRight = QPushButton("Поворот\nнаправо на")
         self.buttonRight.setStyleSheet("background-color: rgb(12, 40, 90);border-radius: 0;border: 0px solid")
         self.buttonRight.setFont(QtGui.QFont("Times", 12, QtGui.QFont.Bold))
         self.buttonRight.setSizePolicy(size_policy)
         self.buttonRight.setMinimumHeight(40)
         self.buttonRight.setMaximumHeight(self.__max_height_size_of_widget_right_down_layout)
-        self.buttonRight.setEnabled(False)
         self.buttonRight.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Equal)
         self.buttonRight.clicked.connect(self.view.slot_rotate_right)
+        self.buttonRight.setEnabled(False)
         # endregion
 
-        # region кнопка изменения гралуса поворота изажения(plain_text)
+        # region кнопка изменения градуса поворота изажения(plain_text)
         self.plain_text = QLineEdit()
         self.plain_text.setMaxLength(3)
         reg_ex = QRegExp("[0-9]{1,3}")
@@ -294,6 +296,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.plain_text.setMaximumHeight(40)
         self.plain_text.setMaximumWidth(self.__max_height_size_of_widget_right_down_layout)
         self.plain_text.textChanged.connect(self.text_changed)
+        self.plain_text.setEnabled(False)
         # endregion
 
         # endregion
@@ -335,9 +338,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout_lower_right.addLayout(self.layout_flip_the_image)
         # endregion
 
-        # region верхний левый лэйаут(layout_up_left)
-        self.layout_up_left = QHBoxLayout()
-        # endregion
         ####self.view.angle = int(self.plain_text.text())
 
         # region добавление на лэйаут(layout_flip_the_image[horizontal]) кнопок для манипуляции с изображением
@@ -355,6 +355,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # endregion
 
         # region левый верхний лэйаут(layout_up_left)
+        self.layout_up_left = QHBoxLayout()
         self.layout_up_left.addWidget(self.view)
         # endregion
         # endregion
@@ -411,7 +412,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if filename:
             self.pixmap = QPixmap(filename)
             if not self.pixmap is None:
-                self.btn_select_area.setEnabled(True)  # включаем "килкабельность" у кнопки
+                # region включаем "килкабельность" у кнопок
+                self.btn_select_area.setEnabled(True)
+                self.sld.setEnabled(True)
+                self.btn_recognize_text.setEnabled(True)
+                self.plain_text.setEnabled(True)
+                # endregion
 
                 self.scene.clear()  # очистка сцены
                 self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())  # сброс скрола
