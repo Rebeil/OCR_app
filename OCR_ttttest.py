@@ -25,17 +25,32 @@ class SnippingWidget(QtWidgets.QMainWindow):
         self.end_point = QtCore.QPoint()
 
     def mousePressEvent(self, event):
+        """
+        Функция отслеживания нажатия ЛКМ
+        :param event:
+        :return:
+        """
         self.start_point = event.pos()
         self.end_point = event.pos()
         print(f'Позиция нажатия: {self.start_point, self.end_point}')
         self.update()
 
     def mouseMoveEvent(self, event):
+        """
+        Функция отслеживания перемещения мыши
+        :param event:
+        :return:
+        """
         self.end_point = event.pos()
         print(f'Позиция перемещения: {self.end_point}')
         self.update()
 
     def mouseReleaseEvent(self, QMouseEvent):
+        """
+        Функция отслеживания вырезания области изображения
+        :param QMouseEvent:
+        :return:
+        """
         r = QtCore.QRect(self.start_point, self.end_point).normalized()
         self.hide()
         try:
@@ -172,6 +187,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_select_area.setMaximumHeight(self.__max_height_size_of_widget_left_down_layout)
         self.btn_select_area.setShortcut(QtCore.Qt.ALT + QtCore.Qt.Key_Q)
         self.btn_select_area.clicked.connect(self.activateSnipping)
+        self.btn_select_area.setEnabled(False)
         # endregion
 
         # region кнопка загрузить изображение(open_btn)
@@ -395,6 +411,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if filename:
             self.pixmap = QPixmap(filename)
             if not self.pixmap is None:
+                self.btn_select_area.setEnabled(True)  # включаем "килкабельность" у кнопки
+
                 self.scene.clear()  # очистка сцены
                 self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())  # сброс скрола
 
